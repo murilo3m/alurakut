@@ -22,6 +22,28 @@ function ProfileSidebar(propriedades) {
   )
 }
 
+function ProfileRelationsBox(props){
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smallTitle">
+        {props.title} ({props.items.length})
+      </h2>
+      <ul>
+        {props.items.slice(0,6).map((itemAtual) => {
+          return (
+            <li key={itemAtual.id}>
+              <a href={`https://github.com/${itemAtual.html_url}`}>
+                <img src={`https://github.com/${itemAtual.login}.png`} />
+                <span>{itemAtual.login}</span>
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+    </ProfileRelationsBoxWrapper>
+  )
+}
+
 export default function Home() {
   const usuarioAleatorio = 'murilo3m';
 
@@ -39,6 +61,28 @@ export default function Home() {
     'peas',
     'omariosouto'
   ]
+
+  const [followers, setFollowers] = React.useState([]);
+
+  React.useEffect(() => {
+    fetch('https://api.github.com/users/murilo3m/followers')
+    .then((response) => {
+      return response.json();
+    }).then((response) => {
+      setFollowers(response);
+    })    
+  }, [])
+
+  const [following, setFollowing] = React.useState([]);
+
+  React.useEffect(() => {
+    fetch('https://api.github.com/users/murilo3m/following')
+    .then((response) => {
+      return response.json();
+    }).then((response) => {
+      setFollowing(response);
+    })    
+  }, [])
 
   return (
     <>
@@ -96,12 +140,12 @@ export default function Home() {
           </Box>
         </div>
         <div className="profileRelationsArea" style={{ gridArea: 'profileRelationsArea' }}>
-          <ProfileRelationsBoxWrapper>
+        <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Comunidades ({comunidades.length})
             </h2>
             <ul>
-              {comunidades.map((itemAtual) => {
+              {comunidades.slice(0,6).map((itemAtual) => {
                 return (
                   <li key={itemAtual.id}>
                     <a href={`/users/${itemAtual.title}`}>
@@ -113,13 +157,15 @@ export default function Home() {
               })}
             </ul>
           </ProfileRelationsBoxWrapper>
+          <ProfileRelationsBox title="Seguidores Github" items={followers} />
+          <ProfileRelationsBox title="Seguindo Github" items={following} />
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Pessoas da comunidade ({pessoasFavoritas.length})
             </h2>
 
             <ul>
-              {pessoasFavoritas.map((itemAtual) => {
+              {pessoasFavoritas.slice(0,6).map((itemAtual) => {
                 return (
                   <li key={itemAtual}>
                     <a href={`/users/${itemAtual}`}>
