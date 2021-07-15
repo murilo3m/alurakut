@@ -47,11 +47,7 @@ function ProfileRelationsBox(props){
 export default function Home() {
   const usuarioAleatorio = 'murilo3m';
 
-  const [comunidades, setComunidades] = React.useState([{
-    id: '12802378123789378912789789123896123', 
-    title: 'Eu odeio acordar cedo',
-    image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg'
-  }]);
+  const [comunidades, setComunidades] = React.useState([]);
 
   const pessoasFavoritas = [
     'luantorres',
@@ -62,8 +58,8 @@ export default function Home() {
     'omariosouto'
   ]
 
+  //Followers
   const [followers, setFollowers] = React.useState([]);
-
   React.useEffect(() => {
     fetch('https://api.github.com/users/murilo3m/followers')
     .then((response) => {
@@ -73,8 +69,8 @@ export default function Home() {
     })    
   }, [])
 
+  //Following
   const [following, setFollowing] = React.useState([]);
-
   React.useEffect(() => {
     fetch('https://api.github.com/users/murilo3m/following')
     .then((response) => {
@@ -83,6 +79,31 @@ export default function Home() {
       setFollowing(response);
     })    
   }, [])
+
+  //Communities (Datocms - GraphQL)
+  React.useEffect(() => {
+    fetch('https://graphql.datocms.com/', {
+      method: 'POST',
+      headers: {
+        'Authorization': '5a6ba55c6806dcebe2c268ed9c31e4',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ "query": `query {
+        allCommunities {
+          id
+          title
+          imageUrl
+          _status
+          _firstPublishedAt
+        }
+      }  
+      `
+      })
+    })
+    .then((response) => response.json())
+    .then((r) => setComunidades(r.data.allCommunities))
+  }, []);
 
   return (
     <>
@@ -110,12 +131,24 @@ export default function Home() {
                 console.log('Campo: ', dadosDoForm.get('image'));
 
                 const comunidade = {
-                  id: new Date().toISOString(),
                   title: dadosDoForm.get('title'),
-                  image: dadosDoForm.get('image'),
+                  imageUrl: dadosDoForm.get('image'),
                 }
-                const comunidadesAtualizadas = [...comunidades, comunidade];
-                setComunidades(comunidadesAtualizadas)
+
+                fetch('/api/community', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(comunidade)
+                })
+                .then(async (response) => {
+                  const res = await response.json();
+                  const comunidade = res.registro;
+                  const comunidadesAtualizadas = [...comunidades, comunidade];
+                  setComunidades(comunidadesAtualizadas)
+                })
+
             }}>
               <div>
                 <input
@@ -148,8 +181,8 @@ export default function Home() {
               {comunidades.slice(0,6).map((itemAtual) => {
                 return (
                   <li key={itemAtual.id}>
-                    <a href={`/users/${itemAtual.title}`}>
-                      <img src={itemAtual.image} />
+                    <a href={`/community/${itemAtual.id}`}>
+                      <img src={itemAtual.imageUrl} />
                       <span>{itemAtual.title}</span>
                     </a>
                   </li>
@@ -159,7 +192,7 @@ export default function Home() {
           </ProfileRelationsBoxWrapper>
           <ProfileRelationsBox title="Seguidores Github" items={followers} />
           <ProfileRelationsBox title="Seguindo Github" items={following} />
-          <ProfileRelationsBoxWrapper>
+          {/*<ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Pessoas da comunidade ({pessoasFavoritas.length})
             </h2>
@@ -176,7 +209,7 @@ export default function Home() {
                 )
               })}
             </ul>
-          </ProfileRelationsBoxWrapper>
+            </ProfileRelationsBoxWrapper>*/}
         </div>
       </MainGrid>
     </>
