@@ -1,4 +1,6 @@
 import React from 'react';
+import nookies from 'nookies'
+import jwt from 'jsonwebtoken'
 import MainGrid from '../src/components/MainGrid'
 import Box from '../src/components/Box'
 import { AlurakutMenu, AlurakutProfileSidebarMenuDefault, OrkutNostalgicIconSet } from '../src/lib/AlurakutCommons';
@@ -32,7 +34,7 @@ function ProfileRelationsBox(props){
         {props.items.slice(0,6).map((itemAtual) => {
           return (
             <li key={itemAtual.id}>
-              <a href={`https://github.com/${itemAtual.html_url}`}>
+              <a href={`${itemAtual.html_url}`} target="_blank">
                 <img src={`https://github.com/${itemAtual.login}.png`} />
                 <span>{itemAtual.login}</span>
               </a>
@@ -44,19 +46,10 @@ function ProfileRelationsBox(props){
   )
 }
 
-export default function Home() {
-  const usuarioAleatorio = 'murilo3m';
+export default function Home(props) {
+  const usuarioAleatorio = props.githubUser;
 
   const [comunidades, setComunidades] = React.useState([]);
-
-  const pessoasFavoritas = [
-    'luantorres',
-    'liboniluciano',
-    'glibonis',
-    'juunegreiros',
-    'peas',
-    'omariosouto'
-  ]
 
   //Followers
   const [followers, setFollowers] = React.useState([]);
@@ -192,26 +185,39 @@ export default function Home() {
           </ProfileRelationsBoxWrapper>
           <ProfileRelationsBox title="Seguidores Github" items={followers} />
           <ProfileRelationsBox title="Seguindo Github" items={following} />
-          {/*<ProfileRelationsBoxWrapper>
-            <h2 className="smallTitle">
-              Pessoas da comunidade ({pessoasFavoritas.length})
-            </h2>
-
-            <ul>
-              {pessoasFavoritas.slice(0,6).map((itemAtual) => {
-                return (
-                  <li key={itemAtual}>
-                    <a href={`/users/${itemAtual}`}>
-                      <img src={`https://github.com/${itemAtual}.png`} />
-                      <span>{itemAtual}</span>
-                    </a>
-                  </li>
-                )
-              })}
-            </ul>
-            </ProfileRelationsBoxWrapper>*/}
         </div>
       </MainGrid>
     </>
   )
+}
+
+export async function getServerSideProps(context){
+  const cookies = nookies.get(context);
+  const token = cookies.USER_TOKEN;
+
+  const { isAuthenticated } = await fetch('https://alurakut.vercel.app/api/auth', {
+    headers: {
+      Authorization: token
+    }
+  })
+  .then((resposta) => resposta.json())
+
+  console.log(isAuthenticated)
+
+  if(!isAuthenticated){
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false
+      }
+    }
+  }
+
+  const { githubUser } = jwt.decode(token);
+
+  return {
+    props: {
+      githubUser: githubUser
+    }, // will be passed to thep page component as props
+  }
 }
